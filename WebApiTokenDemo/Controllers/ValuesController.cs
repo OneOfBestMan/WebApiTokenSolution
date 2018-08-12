@@ -6,7 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace WebApiTokenDemo.Controllers
 {
-    [Route("api/[controller]")]
+    // [Route("api/[controller]")]
+    // [ApiVersionNeutral]
+    [ApiVersion("1.0")]
+    [ApiVersion("0.9", Deprecated = true)]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
     public class ValuesController : ControllerBase
     {
@@ -14,14 +18,16 @@ namespace WebApiTokenDemo.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<string>> Get()
         {
-            return new string[] { "value1", "value2" };
+            var myApiVersion = HttpContext.GetRequestedApiVersion();
+            return new string[] { "from v1", "value1", "value2", $"ApiVersion {myApiVersion}" };
         }
 
         // GET api/values/5
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public ActionResult<string> Get(int id)
         {
-            return "value";
+            var myApiVersion = HttpContext.GetRequestedApiVersion();
+            return $"value is {id}. Api version is {myApiVersion}.";
         }
 
         // POST api/values

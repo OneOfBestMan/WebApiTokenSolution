@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,22 @@ namespace WebApiTokenDemo
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+
+            // reporting api versions will return the headers "api-supported-versions" and "api-deprecated-versions"
+
+            //services.AddApiVersioning(o => o.ReportApiVersions = true);
+            services.AddApiVersioning(o =>
+            {
+                o.ReportApiVersions = true;
+                //o.AssumeDefaultVersionWhenUnspecified = true;
+                //o.DefaultApiVersion = new ApiVersion(1, 0);
+                //o.ApiVersionReader = o.ApiVersionReader = ApiVersionReader.Combine(
+                //    new QueryStringApiVersionReader(),
+                //    new HeaderApiVersionReader() { HeaderNames = { "api-version" } }
+                //    );
+            });
+
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
