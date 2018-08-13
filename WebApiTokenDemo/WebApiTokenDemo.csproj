@@ -5,6 +5,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Folder Include="Areas\Letting\Data\" />
+    <Folder Include="Areas\Letting\Models\" />
+    <Folder Include="Areas\Letting\Views\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 

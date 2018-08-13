@@ -58,7 +58,16 @@ namespace WebApiTokenDemo
             }
 
             app.UseHttpsRedirection();
-            app.UseMvc();
+            //app.UseMvc();
+            app.UseMvc(routes =>
+            {
+                routes.MapRoute(
+                    name: "areas",
+                    template: "{area:exists}/{controller=Home}/{action=Index}/{id?}"
+                );
+            }
+            );
+
         }
     }
 }
