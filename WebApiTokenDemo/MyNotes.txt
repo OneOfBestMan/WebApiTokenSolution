@@ -1,0 +1,9 @@
+﻿
+Reverse Engineering Existing Databases in Entity Framework Core 2
+=================================================================
+See https://wildermuth.com/2017/12/20/Reverse-Engineering-Existing-Databases-in-Entity-Framework-Core-2
+
+run on command line:
+
+dotnet ef dbcontext -v scaffold "Server=.;Database=SmileProp;Integrated Security=true;" Microsoft.EntityFrameworkCore.SqlServer -c ApplicationDbContext -o Data --context-dir "Data/Context" -d
+

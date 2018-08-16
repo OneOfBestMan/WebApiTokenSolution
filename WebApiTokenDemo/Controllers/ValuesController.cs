@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using WebApiTokenDemo.Data;
 
 namespace WebApiTokenDemo.Controllers
 {
@@ -14,12 +15,21 @@ namespace WebApiTokenDemo.Controllers
     [ApiController]
     public class ValuesController : ControllerBase
     {
+        private ApplicationDbContext dbContext;
+
+        public ValuesController(ApplicationDbContext dbContext)
+        {
+            this.dbContext = dbContext;
+        }
+
         // GET api/values
         [HttpGet]
         public ActionResult<IEnumerable<string>> Get()
         {
             var myApiVersion = HttpContext.GetRequestedApiVersion();
-            return new string[] { "from v1", "value1", "value2", $"ApiVersion {myApiVersion}" };
+            // return new string[] { "from v1", "value1", "value2", $"ApiVersion {myApiVersion}" };
+            //return dbContext.Tenants.Select(r => r.ComputedName).Take(20).ToArray();
+            return dbContext.Users.Select(r => r.UserName).Take(20).ToArray();
         }
 
         // GET api/values/5

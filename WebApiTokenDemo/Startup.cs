@@ -5,12 +5,15 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Versioning;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using WebApiTokenDemo.Data;
 
 namespace WebApiTokenDemo
 {
@@ -28,8 +31,12 @@ namespace WebApiTokenDemo
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
-            // reporting api versions will return the headers "api-supported-versions" and "api-deprecated-versions"
+            services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
 
+
+
+            // reporting api versions will return the headers "api-supported-versions" and "api-deprecated-versions"
             //services.AddApiVersioning(o => o.ReportApiVersions = true);
             services.AddApiVersioning(o =>
             {
@@ -41,8 +48,6 @@ namespace WebApiTokenDemo
                 //    new HeaderApiVersionReader() { HeaderNames = { "api-version" } }
                 //    );
             });
-
-
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -58,15 +63,21 @@ namespace WebApiTokenDemo
             }
 
             app.UseHttpsRedirection();
-            //app.UseMvc();
-            app.UseMvc(routes =>
-            {
-                routes.MapRoute(
-                    name: "areas",
-                    template: "{area:exists}/{controller=Home}/{action=Index}/{id?}"
-                );
-            }
-            );
+            app.UseMvc();
+            //app.UseMvc(routes =>
+            //{
+            //    routes.MapRoute(
+            //        name: "areas",
+            //        template: "{area:exists}/{controller=Home}/{action=Index}/{id?}"
+            //    );
+            //});
+
+            IServiceProvider serviceProvider = app.ApplicationServices
+                                                  .GetRequiredService<IServiceScopeFactory>()
+                                                  .CreateScope()
+                                                  .ServiceProvider;
+
+            SeedDatabase.Initialize(serviceProvider);
 
         }
     }

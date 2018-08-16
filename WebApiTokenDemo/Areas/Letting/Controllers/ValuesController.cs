@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using WebApiTokenDemo.Data;
 
 namespace WebApiTokenDemo.Areas.Letting.Controllers
 {
@@ -14,10 +15,19 @@ namespace WebApiTokenDemo.Areas.Letting.Controllers
     [ApiController]
     public class ValuesController : ControllerBase
     {
+        private ApplicationDbContext dbContext;
+
+        public ValuesController(ApplicationDbContext dbContext)
+        {
+            this.dbContext = dbContext;
+        }
+
+
         // GET: api/Values
         [HttpGet]
         public IEnumerable<string> Get()
         {
+            // return dbContext.Users.Select(u => u.UserName).ToArray();
             return new string[] { "from Area-letting", "value1", "value2" };
         }
 
