@@ -14,7 +14,7 @@ namespace WebApiTokenDemo.Data
             var context = serviceProvider.GetRequiredService<ApplicationDbContext>();
             var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-            context.Database.EnsureCreated();
+            //context.Database.EnsureCreated();
 
             if (!context.Users.Any())
             {

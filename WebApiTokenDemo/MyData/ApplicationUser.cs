@@ -9,6 +9,7 @@ namespace WebApiTokenDemo.Data
 {
     // Add profile data for application users by adding properties to the ApplicationUser class
     public class ApplicationUser : IdentityUser
+    //public class ApplicationUser : IdentityUser<String>
     {
         //public bool InternalUser { get; set; }
         //public string FirstName { get; set; }
@@ -22,5 +23,6 @@ namespace WebApiTokenDemo.Data
         //    // Add custom user claims here
         //    return userIdentity;
         //}
+
     }
 }

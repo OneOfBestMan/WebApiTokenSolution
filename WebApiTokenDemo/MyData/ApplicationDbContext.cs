@@ -8,16 +8,27 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 namespace WebApiTokenDemo.Data
 {
     public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+    //public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>
+    //public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string, IdentityUserClaim<string>, IdentityUserRole<string>, IdentityUserLogin<string>, IdentityRoleClaim<string>, IdentityUserToken<string>>
     {
+
+        /*
+
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
         }
 
-        //protected override void OnModelCreating(ModelBuilder builder)
-        //{
-        //    base.OnModelCreating(builder);
-        //}
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            // Customize the ASP.NET Core Identity model and override the defaults if needed.
+            // For example, you can rename the ASP.NET Core Identity table names and more.
+            // Add your customizations after calling base.OnModelCreating(builder);
+        }
+
+        */
     }
 
     #region Models
