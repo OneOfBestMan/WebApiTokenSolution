@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -14,6 +16,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using NSwag.AspNetCore;
 using NSwag.SwaggerGeneration.Processors;
 using WebApiTokenDemo.Data;
@@ -33,28 +36,30 @@ namespace WebApiTokenDemo
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            ConfigureOpenApi(services);
-            ConfigureDbContext(services);
-            ConfigureIdentity(services);
-            ConfigureVersioning(services);
+            ConfigureServiceOpenApi(services);
+            ConfigureServiceDbContext(services);
+            ConfigureServiceIdentity(services);
+            ConfigureServiceVersioning(services);
+
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }
 
-        #region Config services
-        private void ConfigureOpenApi(IServiceCollection services)
+        #region Config ADD
+        private void ConfigureServiceOpenApi(IServiceCollection services)
         {
             services.AddSwagger();
         }
-        private void ConfigureDbContext(IServiceCollection services)
+        private void ConfigureServiceDbContext(IServiceCollection services)
         {
-            services.AddDbContext<ApplicationDbContext>(options => 
+            services.AddDbContext<ApplicationDbContext>(options =>
                                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"))
             );
         }
-        private void ConfigureIdentity(IServiceCollection services)
+        private void ConfigureServiceIdentity(IServiceCollection services)
         {
-            services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
-            //services.AddDefaultIdentity<ApplicationUser>().AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
+            services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>()
+                                                                 .AddDefaultTokenProviders();
+
             //services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             //    {
             //        // Password settings
@@ -80,8 +85,45 @@ namespace WebApiTokenDemo
             //    })
             //    .AddEntityFrameworkStores<ApplicationDbContext>()
             //    .AddDefaultTokenProviders();
+
+
+
+            // This returns 401 when a user isn't logged in, instead of redirecting to login page!
+            // https://stackoverflow.com/questions/38800919/how-to-return-401-instead-of-302-in-asp-net-core
+            services.ConfigureApplicationCookie(options =>
+            {
+                options.Events.OnRedirectToLogin = context =>
+                {
+                    context.Response.StatusCode = 401;
+                    return Task.CompletedTask;
+                };
+            });
+
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.SaveToken = true;
+                options.RequireHttpsMetadata = false;
+                options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters()
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidAudience = "http://oec.com",
+                    ValidIssuer = "http://oec.com",
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("MySuperSecureKey"))
+                };
+            });
+
+
+
         }
-        private void ConfigureVersioning(IServiceCollection services)
+        private void ConfigureServiceVersioning(IServiceCollection services)
         {
             services.AddApiVersioning(options =>
             {
@@ -101,65 +143,13 @@ namespace WebApiTokenDemo
         }
         #endregion
 
-
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-
-                app.UseSwaggerUiWithApiExplorer(settings =>
-                {
-                    settings.SwaggerRoute = "/swagger/v3/swagger.json";
-                    settings.ShowRequestHeaders = true;
-                    settings.DocExpansion = "list";
-                    settings.UseJsonEditor = true;
-                    settings.PostProcess = document =>
-                    {
-                        document.BasePath = "/";
-                    };
-                    settings.GeneratorSettings.Description = "Building Web APIs Workshop Demo Web API";
-                    settings.GeneratorSettings.Title = "Genealogy API";
-                    settings.GeneratorSettings.Version = "3.0";
-                    settings.GeneratorSettings.OperationProcessors.Add(
-                        new ApiVersionProcessor() { IncludedVersions = new[] { "3.0" } }
-                    );
-                });
-                app.UseSwaggerUiWithApiExplorer(settings =>
-                {
-                    settings.SwaggerRoute = "/swagger/v2/swagger.json";
-                    settings.ShowRequestHeaders = true;
-                    settings.DocExpansion = "list";
-                    settings.UseJsonEditor = true;
-                    settings.PostProcess = document =>
-                    {
-                        document.BasePath = "/";
-                    };
-                    settings.GeneratorSettings.Description = "Building Web APIs Workshop Demo Web API";
-                    settings.GeneratorSettings.Title = "Genealogy API";
-                    settings.GeneratorSettings.Version = "2.0";
-                    settings.GeneratorSettings.OperationProcessors.Add(
-                        new ApiVersionProcessor() { IncludedVersions = new[] { "2.0" } }
-                    );
-                });
-                app.UseSwaggerUiWithApiExplorer(settings =>
-                {
-                    settings.SwaggerRoute = "/swagger/v1/swagger.json";
-                    settings.ShowRequestHeaders = true;
-                    settings.DocExpansion = "list";
-                    settings.UseJsonEditor = true;
-                    settings.PostProcess = document =>
-                    {
-                        document.BasePath = "/";
-                    };
-                    settings.GeneratorSettings.Description = "Building Web APIs Workshop Demo Web API";
-                    settings.GeneratorSettings.Title = "Genealogy API";
-                    settings.GeneratorSettings.Version = "1.0";
-                    settings.GeneratorSettings.OperationProcessors.Add(
-                        new ApiVersionProcessor() { IncludedVersions = new[] { "1.0" } }
-                    );
-                });
+                ConfigureUseSwagger(app, env); // Do not expose Swagger interface in production
             }
             else
             {
@@ -168,7 +158,7 @@ namespace WebApiTokenDemo
 
             app.UseHttpsRedirection();
 
-            //app.UseAuthentication();
+            app.UseAuthentication();
 
             IServiceProvider serviceProvider = app.ApplicationServices
                                                   .GetRequiredService<IServiceScopeFactory>()
@@ -186,5 +176,66 @@ namespace WebApiTokenDemo
             //    );
             //});
         }
+
+        #region Config USE
+        public void ConfigureUseSwagger(IApplicationBuilder app, IHostingEnvironment env)
+        {
+            string descr = "My tutorial on how to build web Api's";
+            string title = "WebApiToken Demo";
+
+            //app.UseSwaggerUiWithApiExplorer(settings =>
+            app.UseSwaggerUi(typeof(Startup).GetTypeInfo().Assembly, settings =>
+            {
+                settings.SwaggerRoute = "/swagger/v3/swagger.json";
+                settings.ShowRequestHeaders = true;
+                settings.DocExpansion = "list";
+                settings.UseJsonEditor = true;
+                settings.PostProcess = document =>
+                {
+                    document.BasePath = "/";
+                };
+                settings.GeneratorSettings.Description = descr;
+                settings.GeneratorSettings.Title = title;
+                settings.GeneratorSettings.Version = "3.0";
+                settings.GeneratorSettings.OperationProcessors.Add(
+                    new ApiVersionProcessor() { IncludedVersions = new[] { "3.0" } }
+                );
+            });
+            app.UseSwaggerUiWithApiExplorer(settings =>
+            {
+                settings.SwaggerRoute = "/swagger/v2/swagger.json";
+                settings.ShowRequestHeaders = true;
+                settings.DocExpansion = "list";
+                settings.UseJsonEditor = true;
+                settings.PostProcess = document =>
+                {
+                    document.BasePath = "/";
+                };
+                settings.GeneratorSettings.Description = descr;
+                settings.GeneratorSettings.Title = title;
+                settings.GeneratorSettings.Version = "2.0";
+                settings.GeneratorSettings.OperationProcessors.Add(
+                    new ApiVersionProcessor() { IncludedVersions = new[] { "2.0" } }
+                );
+            });
+            app.UseSwaggerUiWithApiExplorer(settings =>
+            {
+                settings.SwaggerRoute = "/swagger/v1/swagger.json";
+                settings.ShowRequestHeaders = true;
+                settings.DocExpansion = "list";
+                settings.UseJsonEditor = true;
+                settings.PostProcess = document =>
+                {
+                    document.BasePath = "/";
+                };
+                settings.GeneratorSettings.Description = descr;
+                settings.GeneratorSettings.Title = title;
+                settings.GeneratorSettings.Version = "1.0";
+                settings.GeneratorSettings.OperationProcessors.Add(
+                    new ApiVersionProcessor() { IncludedVersions = new[] { "1.0" } }
+                );
+            });
+        }
+        #endregion
     }
 }
